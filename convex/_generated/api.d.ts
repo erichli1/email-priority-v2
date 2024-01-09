@@ -14,9 +14,10 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
-import type * as _schema from "../_schema";
+import type * as http from "../http";
 import type * as init from "../init";
 import type * as myFunctions from "../myFunctions";
+import type * as myHttpActions from "../myHttpActions";
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -27,9 +28,10 @@ import type * as myFunctions from "../myFunctions";
  * ```
  */
 declare const fullApi: ApiFromModules<{
-  _schema: typeof _schema;
+  http: typeof http;
   init: typeof init;
   myFunctions: typeof myFunctions;
+  myHttpActions: typeof myHttpActions;
 }>;
 export declare const api: FilterApi<
   typeof fullApi,
