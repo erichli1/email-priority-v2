@@ -7,7 +7,7 @@ import { gmail } from "@googleapis/gmail";
 import { OAuth2Client } from "google-auth-library";
 import { api } from "./_generated/api";
 
-export const decodeBodyMessageData = action({
+export const base64decoder = action({
   args: {
     data: v.any(),
   },
@@ -24,7 +24,8 @@ export const startWatching = action({
         userId: "me",
         requestBody: {
           topicName: "projects/email-priority-classifier/topics/gmail",
-          labelIds: ["INBOX"],
+          labelIds: ["UNREAD"],
+          labelFilterBehavior: "INCLUDE",
         },
       });
       console.log(
@@ -58,6 +59,55 @@ export const stopWatching = action({
         tokenIdentifier: user.tokenIdentifier,
       });
     }
+  },
+});
+
+export const getNewMessages = action({
+  args: {
+    clerkUserId: v.string(),
+    lastHistoryId: v.number(),
+  },
+  handler: async (ctx, { clerkUserId, lastHistoryId }) => {
+    const client = await getGmailClient({ clerkUserId });
+    const response = await client.users.history.list({
+      userId: "me",
+      startHistoryId: lastHistoryId.toString(),
+    });
+
+    const messageIds: string[] = [];
+    response.data.history?.forEach((history) => {
+      history.messagesAdded?.forEach((message) => {
+        if (message.message?.id) messageIds.push(message.message.id);
+      });
+    });
+    if (messageIds.length > 0)
+      console.log(`New messages ${messageIds.toString()}`);
+
+    await Promise.all(
+      messageIds.map(async (messageId) => {
+        const message = await client.users.messages.get({
+          userId: "me",
+          id: messageId,
+        });
+
+        const subject = message.data.payload?.headers?.find(
+          (header) => header.name === "Subject"
+        )?.value;
+
+        const encodedBody = message.data.payload?.parts?.find(
+          (part) => part.mimeType === "text/plain"
+        )?.body?.data;
+        if (!encodedBody) return;
+        const body = await ctx.runAction(api.nodeActions.base64decoder, {
+          data: encodedBody,
+        });
+
+        console.log(`Processing message ${messageId}`);
+        console.log(`Subject: ${subject}`);
+        console.log(`Body: ${body}`);
+        console.log("-----------------------");
+      })
+    );
   },
 });
 

@@ -121,3 +121,22 @@ export const deleteFromWatch = mutation({
     }
   },
 });
+
+export const processHistoryUpdate = mutation({
+  args: { emailAddress: v.string(), historyId: v.number() },
+  handler: async (ctx, { emailAddress, historyId }) => {
+    const existing = await ctx.db
+      .query("watch")
+      .filter((q) => q.eq(q.field("email"), emailAddress))
+      .first();
+
+    if (!existing) console.log("Skipping history update bc user doesn't exist");
+    else {
+      await ctx.scheduler.runAfter(10, api.nodeActions.getNewMessages, {
+        clerkUserId: existing.clerkUserId,
+        lastHistoryId: existing.lastHistoryId,
+      });
+      await ctx.db.patch(existing._id, { lastHistoryId: historyId });
+    }
+  },
+});
