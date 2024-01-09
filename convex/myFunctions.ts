@@ -76,3 +76,48 @@ export const myAction = action({
     });
   },
 });
+
+export const addToWatchIfNonexistent = mutation({
+  args: {
+    email: v.string(),
+    clerkUserId: v.string(),
+    tokenIdentifier: v.string(),
+    lastHistoryId: v.number(),
+  },
+  handler: async (
+    ctx,
+    { email, clerkUserId, tokenIdentifier, lastHistoryId }
+  ) => {
+    const existing = await ctx.db
+      .query("watch")
+      .filter((q) => q.eq(q.field("tokenIdentifier"), tokenIdentifier))
+      .first();
+
+    if (existing) console.log("Skipping watch bc user already exists");
+    else {
+      await ctx.db.insert("watch", {
+        email,
+        clerkUserId,
+        tokenIdentifier,
+        lastHistoryId,
+      });
+      console.log(`Added ${email} to watch`);
+    }
+  },
+});
+
+export const deleteFromWatch = mutation({
+  args: { tokenIdentifier: v.string() },
+  handler: async (ctx, { tokenIdentifier }) => {
+    const existing = await ctx.db
+      .query("watch")
+      .filter((q) => q.eq(q.field("tokenIdentifier"), tokenIdentifier))
+      .first();
+
+    if (!existing) console.log("Skipping delete bc user doesn't exist");
+    else {
+      await ctx.db.delete(existing._id);
+      console.log(`Deleted watch for ${existing.email}`);
+    }
+  },
+});

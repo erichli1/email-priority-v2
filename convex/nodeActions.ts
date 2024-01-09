@@ -5,6 +5,7 @@ import { v } from "convex/values";
 import clerkClient from "@clerk/clerk-sdk-node";
 import { gmail } from "@googleapis/gmail";
 import { OAuth2Client } from "google-auth-library";
+import { api } from "./_generated/api";
 
 export const decodeBodyMessageData = action({
   args: {
@@ -26,7 +27,17 @@ export const startWatching = action({
           labelIds: ["INBOX"],
         },
       });
-      console.log(`watch response status ${response.status}`);
+      console.log(
+        `Triggered watch for ${user.email} with status ${response.status}`
+      );
+
+      if (response.data.historyId)
+        await ctx.runMutation(api.myFunctions.addToWatchIfNonexistent, {
+          email: user.email!,
+          clerkUserId: user.subject,
+          tokenIdentifier: user.tokenIdentifier,
+          lastHistoryId: parseInt(response.data.historyId),
+        });
     }
   },
 });
@@ -39,7 +50,13 @@ export const stopWatching = action({
       const response = await client.users.stop({
         userId: "me",
       });
-      console.log(`stop response status ${response.status}`);
+      console.log(
+        `Triggered stop for ${user.email} with status ${response.status}`
+      );
+
+      await ctx.runMutation(api.myFunctions.deleteFromWatch, {
+        tokenIdentifier: user.tokenIdentifier,
+      });
     }
   },
 });
