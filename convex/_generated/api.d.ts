@@ -18,6 +18,7 @@ import type * as http from "../http";
 import type * as init from "../init";
 import type * as myFunctions from "../myFunctions";
 import type * as myHttpActions from "../myHttpActions";
+import type * as nodeActions from "../nodeActions";
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -32,6 +33,7 @@ declare const fullApi: ApiFromModules<{
   init: typeof init;
   myFunctions: typeof myFunctions;
   myHttpActions: typeof myHttpActions;
+  nodeActions: typeof nodeActions;
 }>;
 export declare const api: FilterApi<
   typeof fullApi,
