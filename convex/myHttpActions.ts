@@ -6,5 +6,11 @@ export const receiveMessage = httpAction(async (ctx, request) => {
     const data = Buffer.from(body.message.data, "base64url").toString();
     console.log(`Received message: ${data}`);
   }
-  return new Response(null, { status: 200 });
+  return new Response(null, {
+    status: 200,
+    headers: new Headers({
+      "Access-Control-Allow-Origin": "*",
+      Vary: "Origin",
+    }),
+  });
 });
