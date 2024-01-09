@@ -8,9 +8,5 @@ export const receiveMessage = httpAction(async (ctx, request) => {
   }
   return new Response(null, {
     status: 200,
-    headers: new Headers({
-      "Access-Control-Allow-Origin": "*",
-      Vary: "Origin",
-    }),
   });
 });
