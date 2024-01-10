@@ -83,10 +83,11 @@ export const addToWatchIfNonexistent = mutation({
     clerkUserId: v.string(),
     tokenIdentifier: v.string(),
     lastHistoryId: v.number(),
+    phoneNumber: v.string(),
   },
   handler: async (
     ctx,
-    { email, clerkUserId, tokenIdentifier, lastHistoryId }
+    { email, clerkUserId, tokenIdentifier, lastHistoryId, phoneNumber }
   ) => {
     const existing = await ctx.db
       .query("watch")
@@ -100,6 +101,7 @@ export const addToWatchIfNonexistent = mutation({
         clerkUserId,
         tokenIdentifier,
         lastHistoryId,
+        phoneNumber,
       });
       console.log(`Added ${email} to watch`);
     }
@@ -137,6 +139,21 @@ export const processHistoryUpdate = mutation({
         lastHistoryId: existing.lastHistoryId,
       });
       await ctx.db.patch(existing._id, { lastHistoryId: historyId });
+    }
+  },
+});
+
+export const getWatch = query({
+  handler: async (ctx) => {
+    const user = await ctx.auth.getUserIdentity();
+    if (user) {
+      const existing = await ctx.db
+        .query("watch")
+        .filter((q) => q.eq(q.field("tokenIdentifier"), user.tokenIdentifier))
+        .first();
+
+      if (!existing) return null;
+      else return existing;
     }
   },
 });

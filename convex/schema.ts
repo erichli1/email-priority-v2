@@ -22,6 +22,7 @@ export default defineSchema(
       clerkUserId: v.string(),
       tokenIdentifier: v.string(),
       lastHistoryId: v.number(),
+      phoneNumber: v.string(),
     }),
   },
   // If you ever get an error about schema mismatch

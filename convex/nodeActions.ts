@@ -23,7 +23,10 @@ export const base64decoder = action({
 });
 
 export const startWatching = action({
-  handler: async (ctx) => {
+  args: {
+    phoneNumber: v.string(),
+  },
+  handler: async (ctx, { phoneNumber }) => {
     const user = await ctx.auth.getUserIdentity();
     if (user) {
       const client = await getGmailClient({ clerkUserId: user.subject });
@@ -46,6 +49,7 @@ export const startWatching = action({
           clerkUserId: user.subject,
           tokenIdentifier: user.tokenIdentifier,
           lastHistoryId: parseInt(response.data.historyId),
+          phoneNumber,
         });
     }
   },
