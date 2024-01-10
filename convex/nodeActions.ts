@@ -7,8 +7,13 @@ import { gmail } from "@googleapis/gmail";
 import { OAuth2Client } from "google-auth-library";
 import { api } from "./_generated/api";
 import OpenAI from "openai";
+import { Twilio } from "twilio";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const twilio = new Twilio(
+  process.env.TWILIO_ACCOUNT_SID,
+  process.env.TWILIO_AUTH_TOKEN
+);
 
 export const base64decoder = action({
   args: {
@@ -120,6 +125,13 @@ export const getNewMessages = action({
           date,
           body,
         });
+
+        // if (priority === "high") {
+        //   await ctx.runAction(api.nodeActions.sendTwilioMessage, {
+        //     subject,
+        //     phoneNumber: XXX,
+        //   });
+        // }
       })
     );
   },
@@ -180,5 +192,20 @@ export const getPriority = action({
     else if (responseText?.includes("low")) return "low";
     else if (responseText?.includes("unclear")) return "unclear";
     else return "error";
+  },
+});
+
+export const sendTwilioMessage = action({
+  args: {
+    subject: v.string(),
+    phoneNumber: v.string(),
+  },
+  handler: async (_, { subject, phoneNumber }) => {
+    const sentMessage = await twilio.messages.create({
+      body: subject,
+      from: "+18336583496",
+      to: phoneNumber,
+    });
+    console.log(`Sent Twilio message ${sentMessage.sid} to ${phoneNumber}`);
   },
 });
