@@ -14,6 +14,7 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
+import type * as crons from "../crons";
 import type * as http from "../http";
 import type * as init from "../init";
 import type * as myFunctions from "../myFunctions";
@@ -29,6 +30,7 @@ import type * as nodeActions from "../nodeActions";
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  crons: typeof crons;
   http: typeof http;
   init: typeof init;
   myFunctions: typeof myFunctions;

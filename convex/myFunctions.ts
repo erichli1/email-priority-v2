@@ -158,3 +158,18 @@ export const getWatch = query({
     }
   },
 });
+
+export const refreshWatch = mutation({
+  handler: async (ctx) => {
+    const watchesToRefresh = await ctx.db.query("watch").collect();
+
+    await Promise.all(
+      watchesToRefresh.map(async (watch) => {
+        await ctx.scheduler.runAfter(10, api.nodeActions.continueWatching, {
+          email: watch.email,
+          clerkUserId: watch.clerkUserId,
+        });
+      })
+    );
+  },
+});

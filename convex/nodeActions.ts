@@ -22,6 +22,26 @@ export const base64decoder = action({
   handler: async (_, { data }) => Buffer.from(data, "base64url").toString(),
 });
 
+export const continueWatching = action({
+  args: {
+    email: v.string(),
+    clerkUserId: v.string(),
+  },
+  handler: async (_, { email, clerkUserId }) => {
+    const client = await getGmailClient({ clerkUserId });
+
+    const response = await client.users.watch({
+      userId: "me",
+      requestBody: {
+        topicName: "projects/email-priority-classifier/topics/gmail",
+        labelIds: ["UNREAD"],
+        labelFilterBehavior: "INCLUDE",
+      },
+    });
+    console.log(`Refreshing watch for ${email} with status ${response.status}`);
+  },
+});
+
 export const startWatching = action({
   args: {
     phoneNumber: v.string(),
