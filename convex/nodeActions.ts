@@ -78,8 +78,9 @@ export const getNewMessages = action({
   args: {
     clerkUserId: v.string(),
     lastHistoryId: v.number(),
+    phoneNumber: v.string(),
   },
-  handler: async (ctx, { clerkUserId, lastHistoryId }) => {
+  handler: async (ctx, { clerkUserId, lastHistoryId, phoneNumber }) => {
     const client = await getGmailClient({ clerkUserId });
     const response = await client.users.history.list({
       userId: "me",
@@ -130,12 +131,12 @@ export const getNewMessages = action({
           body,
         });
 
-        // if (priority === "high") {
-        //   await ctx.runAction(api.nodeActions.sendTwilioMessage, {
-        //     subject,
-        //     phoneNumber: XXX,
-        //   });
-        // }
+        if (priority === "high") {
+          await ctx.scheduler.runAfter(10, api.nodeActions.sendTwilioMessage, {
+            subject,
+            phoneNumber: "+1" + phoneNumber,
+          });
+        }
       })
     );
   },

@@ -137,6 +137,7 @@ export const processHistoryUpdate = mutation({
       await ctx.scheduler.runAfter(10, api.nodeActions.getNewMessages, {
         clerkUserId: existing.clerkUserId,
         lastHistoryId: existing.lastHistoryId,
+        phoneNumber: existing.phoneNumber,
       });
       await ctx.db.patch(existing._id, { lastHistoryId: historyId });
     }
