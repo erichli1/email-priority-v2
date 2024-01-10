@@ -6,6 +6,9 @@ import clerkClient from "@clerk/clerk-sdk-node";
 import { gmail } from "@googleapis/gmail";
 import { OAuth2Client } from "google-auth-library";
 import { api } from "./_generated/api";
+import OpenAI from "openai";
+
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export const base64decoder = action({
   args: {
@@ -94,18 +97,29 @@ export const getNewMessages = action({
           (header) => header.name === "Subject"
         )?.value;
 
+        const date = message.data.payload?.headers?.find(
+          (header) => header.name === "Date"
+        )?.value;
+
         const encodedBody = message.data.payload?.parts?.find(
           (part) => part.mimeType === "text/plain"
         )?.body?.data;
-        if (!encodedBody) return;
+        if (!subject || !date || !encodedBody) {
+          console.log(
+            `Skipping message ${messageId} due to missing subject, date, or body`
+          );
+          return;
+        }
+
         const body = await ctx.runAction(api.nodeActions.base64decoder, {
           data: encodedBody,
         });
 
-        console.log(`Processing message ${messageId}`);
-        console.log(`Subject: ${subject}`);
-        console.log(`Body: ${body}`);
-        console.log("-----------------------");
+        const priority = await ctx.runAction(api.nodeActions.getPriority, {
+          subject,
+          date,
+          body,
+        });
       })
     );
   },
@@ -133,3 +147,38 @@ const getGmailClient = async ({ clerkUserId }: { clerkUserId: string }) => {
 
   return client;
 };
+
+export const getPriority = action({
+  args: {
+    subject: v.string(),
+    date: v.string(),
+    body: v.string(),
+  },
+  handler: async (_, { subject, date, body }) => {
+    const response = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [
+        {
+          role: "system",
+          content: `You are an email priority classifier. The user will input an email subject, date, and body, and you will output a priority of either high, medium, or low. Your response should only be one word, either "high", "medium", or "low". You can determine the priority of an email depending on how time-sensitive the email is and how important the message is to the user. If you are unclear (ex: it could be high priority depending on the context), please output "unclear". Examples of high priority emails include requests for interviews, questions about scheduling, and required actions with short deadlines. Examples of low priority emails include newsletters, emails that publicize events, or student club advertisements. Note that the current datetime is ${new Date().toISOString()}.`,
+        },
+        {
+          role: "system",
+          content:
+            "Given SUBJECT: Join T4SG and BODY: Apply now to join Tech for Social Good, you should output 'low'. Given SUBJECT: Harvard Startup Trek and BODY: When should we schedule the startup visit for on 2/8?, you should output 'high'.",
+        },
+        {
+          role: "user",
+          content: `SUBJECT: ${subject}\nDATE: ${date}\nBODY: ${body}`,
+        },
+      ],
+    });
+    const responseText = response.choices[0].message?.content;
+
+    if (responseText?.includes("high")) return "high";
+    else if (responseText?.includes("medium")) return "medium";
+    else if (responseText?.includes("low")) return "low";
+    else if (responseText?.includes("unclear")) return "unclear";
+    else return "error";
+  },
+});
