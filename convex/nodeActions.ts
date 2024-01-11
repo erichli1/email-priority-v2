@@ -154,7 +154,14 @@ export const getNewMessages = action({
         if (priority === "high") {
           await ctx.scheduler.runAfter(10, api.nodeActions.sendTwilioMessage, {
             subject,
-            phoneNumber: "+1" + phoneNumber,
+            phoneNumber,
+          });
+        } else {
+          await ctx.runMutation(api.myFunctions.addToMessageQueue, {
+            clerkUserId,
+            phoneNumber,
+            subject,
+            priority,
           });
         }
       })
@@ -229,7 +236,7 @@ export const sendTwilioMessage = action({
     const sentMessage = await twilio.messages.create({
       body: subject,
       from: "+18336583496",
-      to: phoneNumber,
+      to: "+1" + phoneNumber,
     });
     console.log(`Sent Twilio message ${sentMessage.sid} to ${phoneNumber}`);
   },

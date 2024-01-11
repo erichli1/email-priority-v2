@@ -9,4 +9,10 @@ crons.cron(
   api.myFunctions.refreshWatch
 );
 
+crons.hourly(
+  "clear message queue",
+  { minuteUTC: 0 },
+  api.myFunctions.clearMessageQueue
+);
+
 export default crons;

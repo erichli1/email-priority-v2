@@ -164,12 +164,65 @@ export const refreshWatch = mutation({
     const watchesToRefresh = await ctx.db.query("watch").collect();
 
     await Promise.all(
-      watchesToRefresh.map(async (watch) => {
-        await ctx.scheduler.runAfter(10, api.nodeActions.continueWatching, {
+      watchesToRefresh.map((watch) =>
+        ctx.scheduler.runAfter(10, api.nodeActions.continueWatching, {
           email: watch.email,
           clerkUserId: watch.clerkUserId,
-        });
-      })
+        })
+      )
     );
+  },
+});
+
+export const addToMessageQueue = mutation({
+  args: {
+    clerkUserId: v.string(),
+    phoneNumber: v.string(),
+    subject: v.string(),
+    priority: v.string(),
+  },
+  handler: async (ctx, { clerkUserId, phoneNumber, subject, priority }) => {
+    await ctx.db.insert("messageQueue", {
+      clerkUserId,
+      phoneNumber,
+      subject,
+      priority,
+    });
+  },
+});
+
+export const clearMessageQueue = mutation({
+  handler: async (ctx) => {
+    const messages = await ctx.db.query("messageQueue").collect();
+
+    const grouped: {
+      [id: string]: { phoneNumber: string; subjects: string[] };
+    } = messages.reduce(
+      (
+        result: { [id: string]: { phoneNumber: string; subjects: string[] } },
+        obj
+      ) => {
+        if (!result[obj.clerkUserId])
+          result[obj.clerkUserId] = {
+            phoneNumber: obj.phoneNumber,
+            subjects: [obj.subject],
+          };
+        else result[obj.clerkUserId].subjects.push(obj.subject);
+
+        return result;
+      },
+      {}
+    );
+
+    await Promise.all(
+      Object.entries(grouped).map(([, { phoneNumber, subjects }]) =>
+        ctx.scheduler.runAfter(10, api.nodeActions.sendTwilioMessage, {
+          phoneNumber,
+          subject: `${subjects.length} OTHER EMAILS: ${subjects.join("; ")}`,
+        })
+      )
+    );
+
+    await Promise.all(messages.map((message) => ctx.db.delete(message._id)));
   },
 });

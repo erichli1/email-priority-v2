@@ -24,6 +24,12 @@ export default defineSchema(
       lastHistoryId: v.number(),
       phoneNumber: v.string(),
     }),
+    messageQueue: defineTable({
+      clerkUserId: v.string(),
+      phoneNumber: v.string(),
+      subject: v.string(),
+      priority: v.string(),
+    }),
   },
   // If you ever get an error about schema mismatch
   // between your data and your schema, and you cannot
