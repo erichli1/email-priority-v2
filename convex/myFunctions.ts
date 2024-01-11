@@ -1,81 +1,7 @@
 import { v } from "convex/values";
-import { query, mutation, action } from "./_generated/server";
+import { query, mutation } from "./_generated/server";
 import { api } from "./_generated/api";
-
-// Write your Convex functions in any file inside this directory (`convex`).
-// See https://docs.convex.dev/functions for more.
-
-// You can read data from the database via a query:
-export const listNumbers = query({
-  // Validators for arguments.
-  args: {
-    count: v.number(),
-  },
-
-  // Query implementation.
-  handler: async (ctx, args) => {
-    //// Read the database as many times as you need here.
-    //// See https://docs.convex.dev/database/reading-data.
-    const numbers = await ctx.db
-      .query("numbers")
-      // Ordered by _creationTime, return most recent
-      .order("desc")
-      .take(args.count);
-    return {
-      viewer: (await ctx.auth.getUserIdentity())?.name ?? null,
-      numbers: numbers.toReversed().map((number) => number.value),
-    };
-  },
-});
-
-// You can write data to the database via a mutation:
-export const addNumber = mutation({
-  // Validators for arguments.
-  args: {
-    value: v.number(),
-  },
-
-  // Mutation implementation.
-  handler: async (ctx, args) => {
-    //// Insert or modify documents in the database here.
-    //// Mutations can also read from the database like queries.
-    //// See https://docs.convex.dev/database/writing-data.
-
-    const id = await ctx.db.insert("numbers", { value: args.value });
-
-    console.log("Added new document with id:", id);
-    // Optionally, return a value from your mutation.
-    // return id;
-  },
-});
-
-// You can fetch data from and send data to third-party APIs via an action:
-export const myAction = action({
-  // Validators for arguments.
-  args: {
-    first: v.number(),
-    second: v.string(),
-  },
-
-  // Action implementation.
-  handler: async (ctx, args) => {
-    //// Use the browser-like `fetch` API to send HTTP requests.
-    //// See https://docs.convex.dev/functions/actions#calling-third-party-apis-and-using-npm-packages.
-    // const response = await ctx.fetch("https://api.thirdpartyservice.com");
-    // const data = await response.json();
-
-    //// Query data by running Convex queries.
-    const data = await ctx.runQuery(api.myFunctions.listNumbers, {
-      count: 10,
-    });
-    console.log(data);
-
-    //// Write data by running Convex mutations.
-    await ctx.runMutation(api.myFunctions.addNumber, {
-      value: args.first,
-    });
-  },
-});
+import { IntervalType } from "./schema";
 
 export const addToWatchIfNonexistent = mutation({
   args: {
@@ -102,6 +28,7 @@ export const addToWatchIfNonexistent = mutation({
         tokenIdentifier,
         lastHistoryId,
         phoneNumber,
+        interval: "every hour",
       });
       console.log(`Added ${email} to watch`);
     }
@@ -138,6 +65,7 @@ export const processHistoryUpdate = mutation({
         clerkUserId: existing.clerkUserId,
         lastHistoryId: existing.lastHistoryId,
         phoneNumber: existing.phoneNumber,
+        interval: existing.interval ?? "every hour",
       });
       await ctx.db.patch(existing._id, { lastHistoryId: historyId });
     }
@@ -180,20 +108,29 @@ export const addToMessageQueue = mutation({
     phoneNumber: v.string(),
     subject: v.string(),
     priority: v.string(),
+    interval: IntervalType,
   },
-  handler: async (ctx, { clerkUserId, phoneNumber, subject, priority }) => {
+  handler: async (
+    ctx,
+    { clerkUserId, phoneNumber, subject, priority, interval }
+  ) => {
     await ctx.db.insert("messageQueue", {
       clerkUserId,
       phoneNumber,
       subject,
       priority,
+      interval,
     });
   },
 });
 
 export const clearMessageQueue = mutation({
-  handler: async (ctx) => {
-    const messages = await ctx.db.query("messageQueue").collect();
+  args: { interval: IntervalType },
+  handler: async (ctx, { interval }) => {
+    const messages = await ctx.db
+      .query("messageQueue")
+      .filter((q) => q.eq(q.field("interval"), interval))
+      .collect();
 
     const grouped: {
       [id: string]: { phoneNumber: string; subjects: string[] };

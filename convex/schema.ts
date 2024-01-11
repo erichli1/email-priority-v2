@@ -1,34 +1,27 @@
-// OPTIONAL: Rename this file to `schema.ts` to declare the shape
-// of the data in your database.
-// See https://docs.convex.dev/database/schemas.
-
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
+export const IntervalType = v.union(
+  v.literal("every hour"),
+  v.literal("every 2 hours")
+);
+
 export default defineSchema(
   {
-    documents: defineTable({
-      fieldOne: v.string(),
-      fieldTwo: v.object({
-        subFieldOne: v.array(v.number()),
-      }),
-    }),
-    // This definition matches the example query and mutation code:
-    numbers: defineTable({
-      value: v.number(),
-    }),
     watch: defineTable({
       email: v.string(),
       clerkUserId: v.string(),
       tokenIdentifier: v.string(),
       lastHistoryId: v.number(),
       phoneNumber: v.string(),
+      interval: IntervalType,
     }),
     messageQueue: defineTable({
       clerkUserId: v.string(),
       phoneNumber: v.string(),
       subject: v.string(),
       priority: v.string(),
+      interval: IntervalType,
     }),
   },
   // If you ever get an error about schema mismatch

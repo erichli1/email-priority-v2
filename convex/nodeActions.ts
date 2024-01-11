@@ -8,6 +8,7 @@ import { OAuth2Client } from "google-auth-library";
 import { api } from "./_generated/api";
 import OpenAI from "openai";
 import { Twilio } from "twilio";
+import { IntervalType } from "./schema";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const twilio = new Twilio(
@@ -99,8 +100,12 @@ export const getNewMessages = action({
     clerkUserId: v.string(),
     lastHistoryId: v.number(),
     phoneNumber: v.string(),
+    interval: IntervalType,
   },
-  handler: async (ctx, { clerkUserId, lastHistoryId, phoneNumber }) => {
+  handler: async (
+    ctx,
+    { clerkUserId, lastHistoryId, phoneNumber, interval }
+  ) => {
     const client = await getGmailClient({ clerkUserId });
     const response = await client.users.history.list({
       userId: "me",
@@ -162,6 +167,7 @@ export const getNewMessages = action({
             phoneNumber,
             subject,
             priority,
+            interval,
           });
         }
       })
