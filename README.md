@@ -1,21 +1,11 @@
-# Convex + TypeScript + Next.js + Clerk + Tailwind + shadcn/ui
+## TLDR
+Immediately notifies you of high-urgency emails and otherwise, sends you an hourly email digest.
 
-This template provides a minimal setup to get Convex working with [Next.js](https://nextjs.org/). It uses [Clerk](https://clerk.dev/) for user authentication.
+## Problem
+I get dozens or even hundreds of emails every day. As a college student, most of the time, it's a random email list that is entirely irrelevant to me but because I need to know about urgent emails (ex: last second reschedule, important update, etc), I can't just turn off or delay email notifications.
 
-Start by editing `convex/myFunctions.ts` and interact with your Next.js app.
+## Solution
+This webapp intercepts your emails and uses an LLM to identify the priority of the email. If high priority, it will immediately send you a text about the email, and otherwise, will schedule a message on the hour about all the lower-priority emails you've received.
 
-See Convex docs at https://docs.convex.dev/home
-
-## Setting up
-
-```
-npm create convex@latest -t nextjs-clerk-shadcn
-```
-
-Then:
-
-1. Follow steps 1 to 3 in the [Clerk onboarding guide](https://docs.convex.dev/auth/clerk#get-started)
-2. Paste the Issuer URL as `CLERK_JWT_ISSUER_DOMAIN` to your dev deployment environment variable settings on the Convex dashboard (see [docs](https://docs.convex.dev/auth/clerk#configuring-dev-and-prod-instances))
-3. Paste your publishable key as `VITE_CLERK_PUBLISHABLE_KEY="<your publishable key>"` to the `.env.local` file in this directory.
-
-If you want to sync Clerk user data via webhooks, check out this [example repo](https://github.com/thomasballinger/convex-clerk-users-table/).
+## Setup
+`npm i` installs the necessary packages and `npm run dev` runs the app locally. Note this project is built on top of [Convex](https://www.convex.dev/) and running locally or deploying it would require an account there.
